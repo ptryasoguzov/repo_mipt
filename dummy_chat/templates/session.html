@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html lang="en">
+
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.0/css/bootstrap.min.css" integrity="sha384-9aIt2nRpC12Uk9gS9baDl411NQApFmC26EwAOH8WgZl5MYYxFfc+NcPb1dKGj7Sk" crossorigin="anonymous">
+    <title style='position: fixed'>Dummy_chat</title>
+
+    <script> 
+        function clearBox(elementID) { 
+            jQuery('#masterdiv div').html(''); 
+            
+        }
+    </script> 
+
+    <style>
+    .popup {
+        display : none;
+        position: fixed;
+        z-index: 1;
+        left: 0;
+        top: 0;
+        width: 100%;
+        height: 100%;
+        overflow: auto;
+        background-color: rgb(0,0,0);
+        background-color: rgb(0,0, 0, 0.4);
+    }
+
+    .close {
+        color : #aaa;
+        font-size: 28px;
+        font-weight: bold;
+        margin-left: auto;
+    }
+
+    .close:hover,
+    .close:focus {
+        color: black;
+        text-decoration: none;
+        cursor: pointer;
+    }
+
+    .popup-header {
+        background-color: #5c82b8;
+        color: white;
+        display: flex;
+        padding: 2px 16px;
+    }
+
+    .popup-content {
+        position: relative;
+        background-color: #fefefe;
+        margin: auto;
+        padding: 0;
+        border: 1px solid #888;
+        width: 80%;
+        box-shadow: 0 4px 8px 0 rgba(0, 0, 0, 0.2), 0 6px 2- px 0 rgba(0,0,0, 0.19);
+        animation-name: animatetop;
+        animation-duration: 0.4s
+    }
+
+    </style>
+
+    </style>
+ 
+</head>
+
+<body>
+    <button id="myBtn">History</button>
+    <div id="mypopup" class="popup">
+        <div class="popup-content">
+            <div class="popup-header">
+                <h2>History</h2>
+                <span class="close">&times;</span>
+            </div>
+            <div class="popup-body">
+                <div id= 'scroll_history ' style = 'overflow-y: scroll; height: 600px;'>
+                    <div id="history" style='margin-left: 43%;'  class="message_history"></div>
+                </div>
+            </div>
+            <div class="popup-footer">
+                <h3>popup Footer</h3>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let popup = document.getElementById('mypopup'),
+            popupToggle = document.getElementById('myBtn'),
+            popupClose = document.querySelector('.close');
+
+            popupToggle.onclick = function() {
+                popup.style.display="block";
+            };
+
+            popupClose.onclick = function () {
+                popup.style.display='none';
+            };
+
+            window.onclick - function (e) {
+                if(e.target == popup) {
+                popup.style.display="none";
+                }
+            };
+    </script>
+
+    <h1 style='color: #000; font-size: 70px; margin-left: 40%'>Dummy Chat</h1>
+    <h3 style='color: #ccc; font-size: 30px; margin-left: 50%'>No message yet..</h3>
+
+    <div id= 'scroll' style="width: 1000px; height: 600px; overflow-y: scroll; margin-left: 18%; position: fixed ">
+        <div id="masterdiv" style='margin-left: 43%;'  class="message_holder"></div>
+    </div>
+
+
+    <form action="" style = 'margin-left: 41%; position: fixed; top: 75%' method="POST">
+        <input type="text" class="message" placeholder="Messages" />
+        <input type="submit" value="Send"  />
+        <input type="button" value="Logout" onclick="logout()" />
+        <input type="button" value="Clear" onclick="clearBox('clear')" />
+    </form>
+    <!-- jQuery (necessary for Bootstrap's JavaScript plugins) -->
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.12.4/jquery.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/1.7.3/socket.io.min.js"></script>
+    <script type="text/javascript" charset="utf-8">
+        var socket = io.connect('http://' + document.domain + ':' + location.port);
+        let username = getCookie('dummy_chat_cookie_user')
+        let token
+
+
+        function getCookie(name) {
+            console.log(document.cookie);
+            let matches = document.cookie.match(new RegExp(
+                "(?:^|; )" + name.replace(/([\.$?*|{}\(\)\[\]\\\/\+^])/g, '\\$1') + "=([^;]*)"
+            ));
+            return matches ? decodeURIComponent(matches[1]) : undefined;
+        }
+
+        function return_sender(msg) {
+            let time_style = '<div> <b style="color: rgb(18, 116, 18)"> [';
+            let user = username
+            let color_me = 'rgb(0,0,255)';
+            let color_other = 'rgb(255, 0, 0)';
+            var color;
+            if (msg.user_name == user) {
+                color = color_me;
+            } else {
+                color = color_other;
+            }
+            let ret_string = time_style + msg.sent_date + '] </b> <b style="color: ' + color + '">' + msg.user_name + ':</b> ' + msg.message + '</div>';
+            return ret_string;
+        }
+
+        function eraseCookie(name) {
+            document.cookie = name + '=0';
+        }
+
+        function logout() {
+            let sent_date = new Date().toLocaleTimeString()
+            socket.emit('logout', {tok: token, date : sent_date})
+            eraseCookie('dummy_chat_cookie')
+            eraseCookie('dummy_chat_cookie_user')
+            window.location.replace('http://' + document.domain + ':' + location.port);
+        }
+
+        socket.on('connect', function () {
+            console.log("Connected!");
+            token = getCookie('dummy_chat_cookie')
+            let sent_date = new Date().toLocaleTimeString()
+            
+            socket.emit('get_messages', {
+                data: 'User Connected',
+                tok: token,
+                date: sent_date
+            })
+            var form = $('form').on('submit', function (e) {
+                e.preventDefault()
+                let sent_date = new Date().toLocaleTimeString();
+                let user_name = username;
+                let txt = $('input.message').val()
+                if (txt) {
+                    socket.emit('send_message', {
+                        tok: token,
+                        msg: {
+                            sent_date: sent_date,
+                            user_name: user_name,
+                            message: txt
+                        }
+                    })
+                }
+                $('input.message').val('').focus()
+            })
+        })
+
+        socket.on('history', function (msg) {
+            console.log(msg)
+            if ($('div.message_history').val() == '') {
+                $('h3').remove()
+                console.log(return_sender(msg));
+                $('div.message_history').append(return_sender(msg));
+            }
+
+            var div = $("#scroll_history");
+            div.scrollTop(div.prop('scrollHeight'));
+        })
+
+        socket.on('message', function (msg) {
+            console.log(msg)
+            if (typeof msg.user_name !== 'undefined') {
+                $('h3').remove()
+                console.log(return_sender(msg));
+                $('div.message_holder').append(return_sender(msg));
+                $('div.message_history').append(return_sender(msg));
+            }
+            var div = $("#scroll");
+            div.scrollTop(div.prop('scrollHeight'));
+
+        $(window).on("beforeunload", function(){
+            alert("beforeunload called");
+            logout()     
+        });
+
+        })
+
+    </script>
+
+
+</body>
+
+</html>
